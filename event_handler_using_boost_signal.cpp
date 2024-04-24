@@ -13,32 +13,62 @@
 #define AC_WHITE "\x1b[37m"
 #define AC_NORMAL "\x1b[m"
 
-// Define an event data structure
-struct EventData {
+// Define an interface for event data
+class IEventData {
+public:
+    virtual void print() const = 0;
+    virtual ~IEventData() {}
+    virtual int getID() const = 0;
+    virtual const std::string& getMessage() const= 0;
+};
+
+ 
+
+// Define an event data structure // Define a concrete implementation of the interface
+struct ConcreteEventData : IEventData {
     int id;
     std::string message;
+    ConcreteEventData(int idx, const std::string m) : id(idx), message(m) {}
+    void print() const override
+	 {
+	 	std::cout << "In Concrete Event Data! ( id = " << id << " message= " << message << ")" << "\n";
+	 }
+
+	int getID() const override{
+		return id;
+	}
+
+	const std::string&  getMessage() const override{
+		return this->message;	
+	}	 
 };
 
 // Define a type alias for the signal
-using EventSignal = boost::signals2::signal<void(EventData*)>;
+using EventSignal = boost::signals2::signal<void(const IEventData*)>;
 
 // Function to handle event
-void eventHandler(EventData* eventData) {
+void eventHandler(const IEventData* eventData) {
 	std::cout << AC_RED ;
-    std::cout << "Event Handler: Received EventData with ID " << eventData->id << " and message: " << eventData->message << std::endl;
-    std::cout<<AC_NORMAL;
+    std::cout << "First Event Handler: Received EventData with ID " << eventData->getID() << " and message: " << eventData->getMessage() << std::endl;    
+    std::cout<<AC_NORMAL;    
+    eventData->print();
+    sleep(2);
 }
 
-void second_eventHandler(EventData* eventData) {
+void second_eventHandler(const IEventData* eventData) {
     std::cout << AC_YELLOW ;
-    std::cout << "Another Funciton for Handling EventData: We Received event with ID " << eventData->id << " and message: " << eventData->message << std::endl;
+    std::cout << "Second Funciton for Handling EventData: event with ID " << eventData->getID() << " and message: "<< eventData->getMessage() << std::endl;
     std::cout<<AC_NORMAL;
+    eventData->print();
+    sleep(3);
 }
 
-void third_eventHandler(EventData* eventData) {
+void third_eventHandler(const IEventData* eventData) {
     std::cout << AC_GREEN ;
-    std::cout << "Third Funciton to Handle EventData: event with ID " << eventData->id << " and message: " << eventData->message << std::endl;
+    std::cout << "Third Funciton to Handle EventData: event with ID " << eventData->getID()  << " and message: " << eventData->getMessage()  << std::endl;
     std::cout<<AC_NORMAL;
+    eventData->print();
+    sleep(4);
 }
 
 int main() {
@@ -51,14 +81,11 @@ int main() {
     eventSignal.connect(&third_eventHandler);
 
     // Create event data
-    EventData eventData { 1, "First event" };
-    EventData d2 { 2, "Second event" };
-
-    // Trigger the event
-    eventSignal(&eventData);
-    std::cout<<std::endl;
+    IEventData * d1 = new ConcreteEventData(1, "First event");
+    IEventData * d2 =  new ConcreteEventData( 2, "Second event");
+    // Trigger the two events
+    eventSignal(d1);    
     sleep(3);
-    eventSignal(&d2);
-
+    eventSignal(d2);
     return 0;
 }
